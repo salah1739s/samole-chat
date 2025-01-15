@@ -26,6 +26,21 @@
     </div>
 
     <script>
+
+        // تهيئة Firebase
+        const firebaseConfig = {
+        apiKey: "AIzaSyDSN7nFydrGN9SIJ7XBJWA45_W_zavZ8OY",
+        authDomain: "samole-chat.firebaseapp.com",
+        databaseURL: "https://samole-chat.firebaseio.com",
+        projectId: "samole-chat",
+        storageBucket: "samole-chat.firebasestorage.app",
+        messagingSenderId: "34581962264",
+        appId: "1:34581962264:web:54eb43725e1d3438c66d6d"
+        };
+
+        const app = firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
         // Remove special characters
         function removeSpecialCharacters(input) {
             return input.replace(/[!@#$%^&*()_~\[\]{}|;:,.<>?]/g, '');
