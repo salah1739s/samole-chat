@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Samole Chat</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="chat-container">
+        <h1>Samole Chat</h1>
+        <div id="chat">
+            <div class="message bot-message">Hello! How can I assist you today?</div>
+        </div>
+        <div id="input-area">
+            <input type="text" id="messageInput" placeholder="Type your message here...">
+            <button id="sendButton">Send</button>
+        </div>
+    </div>
+
+    <button id="unansweredButton" style="display: none;">Show Unanswered Questions</button>
+
+    <div id="passwordPrompt" style="display: none;">
+        <input type="password" id="passwordInput" placeholder="Enter password">
+        <button id="submitPassword">Submit</button>
+    </div>
+
+    <script>
+        // Remove special characters
+        function removeSpecialCharacters(input) {
+            return input.replace(/[!@#$%^&*()_~\[\]{}|;:,.<>?]/g, '');
+        }
+
+        // List of forbidden words with custom responses
+        const forbiddenWordsWithResponses = {
+            "lol": "It seems something is funny! 😂 Share it with me if you want!",
+            "stupid bot": "Swearing violates the rules. Please use respectful language.",
+            "wtf": "Swearing violates the rules. Please use respectful language.",
+            "pornhub": "Inappropriate language detected. Please respect the policies.",
+            "XNXX": "Inappropriate language detected. Please respect the policies.",
+            "bad word": "A forbidden word was used. Please avoid inappropriate words.",
+            "swear": "Please stop using swear words. This is not acceptable."
+        };
+
+        // Check for forbidden words in the text and return a custom response
+        function getForbiddenWordResponse(input) {
+            for (let word in forbiddenWordsWithResponses) {
+                if (input.includes(word)) {
+                    return forbiddenWordsWithResponses[word];
+                }
+            }
+            return null; // No forbidden word found
+        }
+
+        // List of synonyms to convert words to keywords
+        const synonyms = {
+            "hi": "Hello",
+            "howdy": "Hello",
+            "what's up": "How are you",
+            "how to quit porn": "How to stop pornography",
+            "are you married": "😊I am a robot, I cannot marry as I don't have a physical body. If you need anything else, feel free to ask."
+        };
+
+        // Convert alternative words to keywords
+        function normalizeInput(input) {
+            const words = input.split(" ");
+            const normalizedWords = words.map(word => synonyms[word] || word);
+            return normalizedWords.join(" ");
+        }
+
+        // Retrieve unanswered questions from localStorage
+        let unansweredQuestions = JSON.parse(localStorage.getItem('unansweredQuestions')) || [];
+
+        // Display the list of unanswered questions
+        function showUnansweredQuestions() {
+            if (unansweredQuestions.length === 0) {
+                alert("There are no unanswered questions at the moment.");
+            } else {
+                alert("Unanswered Questions:\n" + unansweredQuestions.join("\n"));
+            }
+        }
+
+        // Check if the user says "My name is [name]"
+        function checkForName(input) {
+            const nameRegex = /my name is (\w+)/i; // Regex to check for "My name is [name]"
+            const match = input.match(nameRegex);
+            if (match) {
+                const name = match[1]; // Extract the name
+                return `Hello ${name}! How can I assist you today?`;
+            }
+            return null;
+        }
+
+        // Detect language (Arabic or English)
+        function detectLanguage(text) {
+            const arabicRegex = /[\u0600-\u06FF]/; // Regex to detect Arabic characters
+            return arabicRegex.test(text); // Returns true if Arabic characters are found
+        }
+
+        // Send message
+        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            let userMessage = messageInput.value.trim();
+
+            if (userMessage) {
+                userMessage = removeSpecialCharacters(userMessage); // Remove special characters
+
+                // Display the user's message as typed
+                displayUserMessage(userMessage);
+
+                // Check the language
+                const isArabic = detectLanguage(userMessage);
+                const currentPage = window.location.pathname.split('/').pop(); // Get the current page name
+
+                if (isArabic && currentPage === "index.html") {
+                    // If the text is Arabic and the current page is English, redirect to the Arabic page
+                    window.location.href = "index-ar.html";
+                    return;
+                } else if (!isArabic && currentPage === "index-ar.html") {
+                    // If the text is English and the current page is Arabic, redirect to the English page
+                    window.location.href = "index.html";
+                    return;
+                }
+
+                // Check for forbidden words in the text
+                const forbiddenResponse = getForbiddenWordResponse(userMessage);
+                if (forbiddenResponse) {
+                    displayBotResponse(forbiddenResponse);
+                    return;
+                }
+
+                // Check if the user says "My name is [name]"
+                const nameResponse = checkForName(userMessage);
+                if (nameResponse) {
+                    displayBotResponse(nameResponse);
+                    return;
+                }
+
+                // Check for video search request
+                if (userMessage.startsWith("search for a video")) {
+                    const query = userMessage.replace("search for a video", "").trim();
+                    searchForVideo(query);
+                    return;
+                }
+
+                // Check for news search request
+                if (userMessage.startsWith("search for news")) {
+                    const query = userMessage.replace("search for news", "").trim();
+                    searchForNews(query);
+                    return;
+                }
+
+                // Check for news search request
+                if (userMessage.startsWith("get me news")) {
+                    const query = userMessage.replace("get me news", "").trim();
+                    searchForNews(query);
+                    return;
+                }
+
+                // Convert the input to a keyword to get the appropriate response
+                const normalizedMessage = normalizeInput(userMessage);
+                const botResponse = getBotResponse(normalizedMessage);
+
+                if (botResponse === responses["default"]) {
+                    // Add the question to the list of unanswered questions
+                    unansweredQuestions.push(userMessage);
+                    localStorage.setItem('unansweredQuestions', JSON.stringify(unansweredQuestions)); // Store unanswered questions
+                }
+
+                // Delay the response
+                setTimeout(() => {
+                    displayBotResponse(botResponse);
+                }, 2000);
+            }
+        }
+
+        // Search for a video
+        function searchForVideo(query) {
+            if (query) {
+                const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}&tbm=vid`;
+                displayBotResponse(`Searching for the video "${query}". You can click here to see the results: <a href="${searchUrl}" target="_blank">Click here</a>`);
+            } else {
+                displayBotResponse("Please specify the video you want to search for. 😊");
+            }
+        }
+
+        // Search for news
+        function searchForNews(query) {
+            if (query) {
+                const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}&tbm=nws`;
+                displayBotResponse(`Searching for news about "${query}". You can click here to see the results: <a href="${searchUrl}" target="_blank">Click here</a>`);
+            } else {
+                displayBotResponse("Please specify the topic you want to search for. 😊");
+            }
+        }
+
+        // Display user message
+        function displayUserMessage(message) {
+            const chat = document.getElementById('chat');
+            chat.innerHTML += `<div class="message user-message">${message}</div>`;
+            document.getElementById('messageInput').value = ''; // Clear the field
+            chat.scrollTop = chat.scrollHeight; // Scroll down
+        }
+
+        // Display bot response
+        function displayBotResponse(response) {
+            const chat = document.getElementById('chat');
+            chat.innerHTML += `<div class="message bot-message">${response}</div>`;
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        // Default responses
+        const responses = {
+            // Greetings
+            "Hello": "Hello! How can I assist you today?",
+            "Good morning": "Good morning! I hope your day is wonderful.",
+            "Good evening": "Good evening! How are you?",
+            "How are you": "I'm fine, thank you for asking! How about you?",
+            "What's up": "Not much, I'm here to help! How about you?",
+
+            // Help
+            "Help": "Of course! Tell me what you need help with.",
+            "I need help": "I'm here to assist you. What can I do for you?",
+            "Support me": "Certainly! Please provide me with more details so I can assist you.",
+            "How do you work": "I'm a chatbot designed to help you with anything you need.",
+            "Nothing": "That's fine, I'm here if you need anything. 😊",
+            "Nothing": "Alright, if you need anything at any time, just let me know!",
+
+            // About the bot
+            "Who are you": "I'm a chatbot, specifically designed to help you at any time.",
+            "What's your name": "My name is Chatbot! But you can call me whatever you'd like.",
+            "Are you human": "No, I'm a robot. But I’m designed to serve you in the best way possible.",
+            "What can you do": "I can answer your questions, provide advice, or even chat with you.",
+            "Do you feel": "I don't have feelings, but I try my best to understand your emotions and always support you!",
+
+            // Weather
+            "How's the weather": "I can't check the weather right now, but you can use a weather app.",
+            "Is it raining": "I'm not sure, maybe you can take a look out the window! 😊",
+            "Is it sunny": "I hope the weather is nice for you! A sunny day always makes life better.",
+
+            // Encouragement
+            "I'm sad": "I'm sorry to hear that. Remember, tough days always pass.",
+            "I need encouragement": "You're amazing! Keep going, and you will achieve your goals.",
+            "I'm anxious": "Take a deep breath. Everything will be okay, I'm sure of it.",
+            "Help me feel better": "Of course! You're a strong person, and I believe in your ability to overcome any challenge. 😊",
+
+            // Entertainment
+            "Tell me a joke": "Sure! Why doesn't the computer go to the beach? Because it’s afraid of viruses! 😂",
+            "Joke": "Why is the tree scared? Because it's in a shady place! 😄",
+            "Make me laugh": "Why don't people trust stairs? Because they’re always up to something! 😄",
+
+            // Personal questions
+            "How old are you": "I'm a robot, so I don't have a specific age. 😊",
+            "Where are you from": "I'm from the internet, and always here to serve you.",
+            "Do you have a family": "I don't have a family, but I consider you part of it. 😊",
+            "Are you married": " 😊I am a robot, I cannot marry as I don’t have a physical body. If you need anything else, feel free to ask.",
+
+            // General responses
+            "Thank you": "You're welcome! If you need anything else, don't hesitate to ask.",
+            "Alright": "Great! If you need anything else, just ask.",
+            "Goodbye": "Goodbye! I hope you have a great day.",
+            "See you later": "See you soon! Take care.",
+
+            // Default responses when not understood
+            "default": "Sorry, I didn't understand that. Could you please clarify your question?"
+        };
+
+        // Get bot response
+        function getBotResponse(userMessage) {
+            return responses[userMessage] || responses["default"];
+        }
+
+        // Activate send button
+        document.getElementById('sendButton').onclick = sendMessage;
+
+        // Activate sending via Enter
+        document.getElementById('messageInput').addEventListener('keydown', (event) => {
+            if (event.key === "Enter") {
+                sendMessage();
+            }
+        });
+
+        // Activate showing password field on Alt + O
+        const correctPassword = "samolebeta"; // Correct password
+        document.addEventListener('keydown', (event) => {
+            if (event.altKey && event.key === 'o') { // Alt + O
+                document.getElementById('passwordPrompt').style.display = "block"; // Show password field
+            }
+        });
+
+        // Check password
+        document.getElementById('submitPassword').onclick = () => {
+            const enteredPassword = document.getElementById('passwordInput').value;
+            if (enteredPassword === correctPassword) {
+                document.getElementById('unansweredButton').style.display = "block"; // Show button
+                document.getElementById('passwordPrompt').style.display = "none"; // Hide password field
+            } else {
+                alert("Incorrect password!");
+            }
+        };
+
+        // Activate unanswered questions button
+        document.getElementById('unansweredButton').onclick = showUnansweredQuestions;
+    </script>
+</body>
+</html>
