@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Samole Chat</title>
     <link rel="stylesheet" href="style.css">
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
 </head>
 <body>
     <div id="chat-container">
@@ -27,19 +30,25 @@
 
     <script>
 
-        // تهيئة Firebase
         const firebaseConfig = {
-        apiKey: "AIzaSyDSN7nFydrGN9SIJ7XBJWA45_W_zavZ8OY",
-        authDomain: "samole-chat.firebaseapp.com",
-        databaseURL: "https://samole-chat.firebaseio.com",
-        projectId: "samole-chat",
-        storageBucket: "samole-chat.firebasestorage.app",
-        messagingSenderId: "34581962264",
-        appId: "1:34581962264:web:54eb43725e1d3438c66d6d"
+            apiKey: "AIzaSyDSN7nFydrGN9SIJ7XBJWA45_W_zavZ8OY",
+            authDomain: "samole-chat.firebaseapp.com",
+            databaseURL: "https://samole-chat.firebaseio.com",
+            projectId: "samole-chat",
+            storageBucket: "samole-chat.firebasestorage.app",
+            messagingSenderId: "34581962264",
+            appId: "1:34581962264:web:54eb43725e1d3438c66d6d"
         };
 
-        const app = firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+        // Initialize Firebase
+        let database;
+        try {
+            const app = firebase.initializeApp(firebaseConfig);
+            database = firebase.database();
+            console.log("Firebase initialized successfully!");
+        } catch (error) {
+            console.error("Error initializing Firebase:", error);
+        }
 
         // Remove special characters
         function removeSpecialCharacters(input) {
@@ -83,16 +92,41 @@
             return normalizedWords.join(" ");
         }
 
-        // Retrieve unanswered questions from localStorage
-        let unansweredQuestions = JSON.parse(localStorage.getItem('unansweredQuestions')) || [];
+        // Retrieve unanswered questions from Firebase
+        function retrieveUnansweredQuestions(callback) {
+            const unansweredRef = database.ref('unansweredQuestions');
+            unansweredRef.on('value', (snapshot) => {
+                const questions = [];
+                snapshot.forEach((childSnapshot) => {
+                    questions.push(childSnapshot.val());
+                });
+                console.log("Retrieved questions:", questions);
+                callback(questions);
+            }, (error) => {
+                console.error("Error retrieving questions:", error);
+            });
+        }
+
+        // Save unanswered question to Firebase
+        function saveUnansweredQuestion(question) {
+            const unansweredRef = database.ref('unansweredQuestions');
+            unansweredRef.push(question).then(() => {
+                console.log("Question saved successfully:", question);
+            }).catch((error) => {
+                console.error("Error saving question:", error);
+            });
+        }
 
         // Display the list of unanswered questions
         function showUnansweredQuestions() {
-            if (unansweredQuestions.length === 0) {
-                alert("There are no unanswered questions at the moment.");
-            } else {
-                alert("Unanswered Questions:\n" + unansweredQuestions.join("\n"));
-            }
+            retrieveUnansweredQuestions((questions) => {
+                if (questions.length === 0) {
+                    alert("There are no unanswered questions at the moment.");
+                } else {
+                    console.log("Unanswered Questions:", questions);
+                    alert("Unanswered Questions:\n" + questions.join("\n"));
+                }
+            });
         }
 
         // Check if the user says "My name is [name]"
@@ -110,6 +144,66 @@
         function detectLanguage(text) {
             const arabicRegex = /[\u0600-\u06FF]/; // Regex to detect Arabic characters
             return arabicRegex.test(text); // Returns true if Arabic characters are found
+        }
+
+        // Default responses
+        const responses = {
+            // Greetings
+            "Hello": "Hello! How can I assist you today?",
+            "Good morning": "Good morning! I hope your day is wonderful.",
+            "Good evening": "Good evening! How are you?",
+            "How are you": "I'm fine, thank you for asking! How about you?",
+            "What's up": "Not much, I'm here to help! How about you?",
+
+            // Help
+            "Help": "Of course! Tell me what you need help with.",
+            "I need help": "I'm here to assist you. What can I do for you?",
+            "Support me": "Certainly! Please provide me with more details so I can assist you.",
+            "How do you work": "I'm a chatbot designed to help you with anything you need.",
+            "Nothing": "That's fine, I'm here if you need anything. 😊",
+
+            // About the bot
+            "Who are you": "I'm a chatbot, specifically designed to help you at any time.",
+            "What's your name": "My name is Chatbot! But you can call me whatever you'd like.",
+            "Are you human": "No, I'm a robot. But I’m designed to serve you in the best way possible.",
+            "What can you do": "I can answer your questions, provide advice, or even chat with you.",
+            "Do you feel": "I don't have feelings, but I try my best to understand your emotions and always support you!",
+
+            // Weather
+            "How's the weather": "I can't check the weather right now, but you can use a weather app.",
+            "Is it raining": "I'm not sure, maybe you can take a look out the window! 😊",
+            "Is it sunny": "I hope the weather is nice for you! A sunny day always makes life better.",
+
+            // Encouragement
+            "I'm sad": "I'm sorry to hear that. Remember, tough days always pass.",
+            "I need encouragement": "You're amazing! Keep going, and you will achieve your goals.",
+            "I'm anxious": "Take a deep breath. Everything will be okay, I'm sure of it.",
+            "Help me feel better": "Of course! You're a strong person, and I believe in your ability to overcome any challenge. 😊",
+
+            // Entertainment
+            "Tell me a joke": "Sure! Why doesn't the computer go to the beach? Because it’s afraid of viruses! 😂",
+            "Joke": "Why is the tree scared? Because it's in a shady place! 😄",
+            "Make me laugh": "Why don't people trust stairs? Because they’re always up to something! 😄",
+
+            // Personal questions
+            "How old are you": "I'm a robot, so I don't have a specific age. 😊",
+            "Where are you from": "I'm from the internet, and always here to serve you.",
+            "Do you have a family": "I don't have a family, but I consider you part of it. 😊",
+            "Are you married": "😊I am a robot, I cannot marry as I don’t have a physical body. If you need anything else, feel free to ask.",
+
+            // General responses
+            "Thank you": "You're welcome! If you need anything else, don't hesitate to ask.",
+            "Alright": "Great! If you need anything else, just ask.",
+            "Goodbye": "Goodbye! I hope you have a great day.",
+            "See you later": "See you soon! Take care.",
+
+            // Default responses when not understood
+            "default": "Sorry, I didn't understand that. Could you please clarify your question?"
+        };
+
+        // Get bot response
+        function getBotResponse(userMessage) {
+            return responses[userMessage] || responses["default"];
         }
 
         // Send message
@@ -178,8 +272,7 @@
 
                 if (botResponse === responses["default"]) {
                     // Add the question to the list of unanswered questions
-                    unansweredQuestions.push(userMessage);
-                    localStorage.setItem('unansweredQuestions', JSON.stringify(unansweredQuestions)); // Store unanswered questions
+                    saveUnansweredQuestion(userMessage);
                 }
 
                 // Delay the response
@@ -224,73 +317,13 @@
             chat.scrollTop = chat.scrollHeight;
         }
 
-        // Default responses
-        const responses = {
-            // Greetings
-            "Hello": "Hello! How can I assist you today?",
-            "Good morning": "Good morning! I hope your day is wonderful.",
-            "Good evening": "Good evening! How are you?",
-            "How are you": "I'm fine, thank you for asking! How about you?",
-            "What's up": "Not much, I'm here to help! How about you?",
-
-            // Help
-            "Help": "Of course! Tell me what you need help with.",
-            "I need help": "I'm here to assist you. What can I do for you?",
-            "Support me": "Certainly! Please provide me with more details so I can assist you.",
-            "How do you work": "I'm a chatbot designed to help you with anything you need.",
-            "Nothing": "That's fine, I'm here if you need anything. 😊",
-            "Nothing": "Alright, if you need anything at any time, just let me know!",
-
-            // About the bot
-            "Who are you": "I'm a chatbot, specifically designed to help you at any time.",
-            "What's your name": "My name is Chatbot! But you can call me whatever you'd like.",
-            "Are you human": "No, I'm a robot. But I’m designed to serve you in the best way possible.",
-            "What can you do": "I can answer your questions, provide advice, or even chat with you.",
-            "Do you feel": "I don't have feelings, but I try my best to understand your emotions and always support you!",
-
-            // Weather
-            "How's the weather": "I can't check the weather right now, but you can use a weather app.",
-            "Is it raining": "I'm not sure, maybe you can take a look out the window! 😊",
-            "Is it sunny": "I hope the weather is nice for you! A sunny day always makes life better.",
-
-            // Encouragement
-            "I'm sad": "I'm sorry to hear that. Remember, tough days always pass.",
-            "I need encouragement": "You're amazing! Keep going, and you will achieve your goals.",
-            "I'm anxious": "Take a deep breath. Everything will be okay, I'm sure of it.",
-            "Help me feel better": "Of course! You're a strong person, and I believe in your ability to overcome any challenge. 😊",
-
-            // Entertainment
-            "Tell me a joke": "Sure! Why doesn't the computer go to the beach? Because it’s afraid of viruses! 😂",
-            "Joke": "Why is the tree scared? Because it's in a shady place! 😄",
-            "Make me laugh": "Why don't people trust stairs? Because they’re always up to something! 😄",
-
-            // Personal questions
-            "How old are you": "I'm a robot, so I don't have a specific age. 😊",
-            "Where are you from": "I'm from the internet, and always here to serve you.",
-            "Do you have a family": "I don't have a family, but I consider you part of it. 😊",
-            "Are you married": " 😊I am a robot, I cannot marry as I don’t have a physical body. If you need anything else, feel free to ask.",
-
-            // General responses
-            "Thank you": "You're welcome! If you need anything else, don't hesitate to ask.",
-            "Alright": "Great! If you need anything else, just ask.",
-            "Goodbye": "Goodbye! I hope you have a great day.",
-            "See you later": "See you soon! Take care.",
-
-            // Default responses when not understood
-            "default": "Sorry, I didn't understand that. Could you please clarify your question?"
-        };
-
-        // Get bot response
-        function getBotResponse(userMessage) {
-            return responses[userMessage] || responses["default"];
-        }
-
         // Activate send button
-        document.getElementById('sendButton').onclick = sendMessage;
+        document.getElementById('sendButton').addEventListener('click', sendMessage);
 
         // Activate sending via Enter
         document.getElementById('messageInput').addEventListener('keydown', (event) => {
             if (event.key === "Enter") {
+                event.preventDefault(); // منع السلوك الافتراضي
                 sendMessage();
             }
         });
@@ -304,7 +337,7 @@
         });
 
         // Check password
-        document.getElementById('submitPassword').onclick = () => {
+        document.getElementById('submitPassword').addEventListener('click', () => {
             const enteredPassword = document.getElementById('passwordInput').value;
             if (enteredPassword === correctPassword) {
                 document.getElementById('unansweredButton').style.display = "block"; // Show button
@@ -312,10 +345,10 @@
             } else {
                 alert("Incorrect password!");
             }
-        };
+        });
 
         // Activate unanswered questions button
-        document.getElementById('unansweredButton').onclick = showUnansweredQuestions;
+        document.getElementById('unansweredButton').addEventListener('click', showUnansweredQuestions);
     </script>
 </body>
 </html>
