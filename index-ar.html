@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>صامولي للدردشة</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
 </head>
 <body>
     <div id="chat-container">
@@ -26,7 +28,6 @@
     </div>
 
     <script>
-        // تهيئة Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyDSN7nFydrGN9SIJ7XBJWA45_W_zavZ8OY",
             authDomain: "samole-chat.firebaseapp.com",
@@ -89,16 +90,41 @@
             return normalizedWords.join(" ");
         }
 
-        // استرجاع الأسئلة غير المجابة من localStorage
-        let unansweredQuestions = JSON.parse(localStorage.getItem('unansweredQuestions')) || [];
+        // حفظ السؤال غير المجاب في Firebase
+        function saveUnansweredQuestion(question) {
+            const unansweredRef = database.ref('unansweredQuestions');
+            unansweredRef.push(question).then(() => {
+                console.log("تم حفظ السؤال بنجاح:", question);
+            }).catch((error) => {
+                console.error("حدث خطأ أثناء حفظ السؤال:", error);
+            });
+        }
 
-        // عرض قائمة الأسئلة التي لم يتم الرد عليها
+        // استرجاع الأسئلة غير المجابة من Firebase
+        function retrieveUnansweredQuestions(callback) {
+            const unansweredRef = database.ref('unansweredQuestions');
+            unansweredRef.on('value', (snapshot) => {
+                const questions = [];
+                snapshot.forEach((childSnapshot) => {
+                    questions.push(childSnapshot.val());
+                });
+                console.log("تم استرجاع الأسئلة:", questions);
+                callback(questions);
+            }, (error) => {
+                console.error("حدث خطأ أثناء استرجاع الأسئلة:", error);
+            });
+        }
+
+        // عرض قائمة الأسئلة غير المجابة
         function showUnansweredQuestions() {
-            if (unansweredQuestions.length === 0) {
-                alert("لا توجد أسئلة غير مجابة حاليًا.");
-            } else {
-                alert("الأسئلة غير المجابة:\n" + unansweredQuestions.join("\n"));
-            }
+            retrieveUnansweredQuestions((questions) => {
+                if (questions.length === 0) {
+                    alert("لا توجد أسئلة غير مجابة حاليًا.");
+                } else {
+                    console.log("الأسئلة غير المجابة:", questions);
+                    alert("الأسئلة غير المجابة:\n" + questions.join("\n"));
+                }
+            });
         }
 
         // الكشف عن اللغة (عربي أو إنجليزي)
@@ -166,8 +192,7 @@
 
                 if (botResponse === responses["default"]) {
                     // إضافة السؤال إلى قائمة الأسئلة غير المجابة
-                    unansweredQuestions.push(userMessage);
-                    localStorage.setItem('unansweredQuestions', JSON.stringify(unansweredQuestions)); // تخزين الأسئلة غير المجابة
+                    saveUnansweredQuestion(userMessage);
                 }
 
                 // تأخير الرد
@@ -280,6 +305,7 @@
         // تفعيل الإرسال عبر Enter
         document.getElementById('messageInput').addEventListener('keydown', (event) => {
             if (event.key === "Enter") {
+                event.preventDefault(); // منع السلوك الافتراضي
                 sendMessage();
             }
         });
