@@ -28,18 +28,6 @@
     </div>
 
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyDSN7nFydrGN9SIJ7XBJWA45_W_zavZ8OY",
-            authDomain: "samole-chat.firebaseapp.com",
-            databaseURL: "https://samole-chat.firebaseio.com",
-            projectId: "samole-chat",
-            storageBucket: "samole-chat.firebasestorage.app",
-            messagingSenderId: "34581962264",
-            appId: "1:34581962264:web:54eb43725e1d3438c66d6d"
-        };
-
-        const app = firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
 
         // إزالة الرموز الخاصة
         function removeSpecialCharacters(input) {
@@ -54,7 +42,14 @@
             "pornhub": "تم اكتشاف كلام غير لائق. نرجو احترام السياسات.",
             "XNXX": "تم اكتشاف كلام غير لائق. نرجو احترام السياسات.",
             "كلمة محظورة": "تم استخدام كلمة محظورة. يرجى تجنب الكلمات المخالفة.",
-            "شتيمة": "يرجى التوقف عن استخدام الشتائم. هذا ليس مقبولًا."
+            "شتيمة": "يرجى التوقف عن استخدام الشتائم. هذا ليس مقبولًا.",
+            "lol": "It seems something is funny! 😂 Share it with me if you want!",
+            "stupid bot": "Swearing violates the rules. Please use respectful language.",
+            "wtf": "Swearing violates the rules. Please use respectful language.",
+            "pornhub": "Inappropriate language detected. Please respect the policies.",
+            "XNXX": "Inappropriate language detected. Please respect the policies.",
+            "bad word": "A forbidden word was used. Please avoid inappropriate words.",
+            "swear": "Please stop using swear words. This is not acceptable."
         };
 
         // التحقق من الكلمات المحظورة داخل النص وإرجاع الرد المخصص
@@ -81,6 +76,11 @@
             "انتا متجوز": "😊انا ريبوت لا استطيع الزواج ليس لدي جسد مادي, اذا كنت تريد أي شئ اخر لا تتردد بطرح سؤالك",
             "هل انتا متجوز": "😊انا ريبوت لا استطيع الزواج ليس لدي جسد مادي, اذا كنت تريد أي شئ اخر لا تتردد بطرح سؤالك",
             "انت متجوز": " 😊انا ريبوت لا استطيع الزواج ليس لدي جسد مادي, اذا كنت تريد أي شئ اخر لا تتردد بطرح سؤالك ",
+            "hi": "Hello",
+            "howdy": "Hello",
+            "what's up": "How are you",
+            "how to quit porn": "How to stop pornography",
+            "are you married": "😊I am a robot, I cannot marry as I don't have a physical body. If you need anything else, feel free to ask."
         };
 
         // تحويل الكلمات البديلة إلى الكلمات الرئيسية
@@ -291,7 +291,59 @@
             "أراك لاحقًا": "أراك قريبًا! اعتنِ بنفسك.",
 
             // الردود الافتراضية عند عدم الفهم
-            "default": "عذرًا، لم أفهم ذلك. هل يمكنك توضيح السؤال أكثر؟"
+            "default": "عذرًا، لم أفهم ذلك. هل يمكنك توضيح السؤال أكثر؟",
+
+            // Greetings
+            "Hello": "Hello! How can I assist you today?",
+            'Good morning': "Good morning! I hope your day is wonderful.",
+            "Good evening": "Good evening! How are you?",
+            "How are you": "I'm fine, thank you for asking! How about you?",
+            "What's up": "Not much, I'm here to help! How about you?",
+
+            // Help
+            "Help": "Of course! Tell me what you need help with.",
+            "I need help": "I'm here to assist you. What can I do for you?",
+            "Support me": "Certainly! Please provide me with more details so I can assist you.",
+            "How do you work": "I'm a chatbot designed to help you with anything you need.",
+            "Nothing": "That's fine, I'm here if you need anything. 😊",
+
+            // About the bot
+            "Who are you": "I'm a chatbot, specifically designed to help you at any time.",
+            "What's your name": "My name is Chatbot! But you can call me whatever you'd like.",
+            "Are you human": "No, I'm a robot. But I’m designed to serve you in the best way possible.",
+            "What can you do": "I can answer your questions, provide advice, or even chat with you.",
+            "Do you feel": "I don't have feelings, but I try my best to understand your emotions and always support you!",
+
+            // Weather
+            "How's the weather": "I can't check the weather right now, but you can use a weather app.",
+            "Is it raining": "I'm not sure, maybe you can take a look out the window! 😊",
+            "Is it sunny": "I hope the weather is nice for you! A sunny day always makes life better.",
+
+            // Encouragement
+            "I'm sad": "I'm sorry to hear that. Remember, tough days always pass.",
+            "I need encouragement": "You're amazing! Keep going, and you will achieve your goals.",
+            "I'm anxious": "Take a deep breath. Everything will be okay, I'm sure of it.",
+            "Help me feel better": "Of course! You're a strong person, and I believe in your ability to overcome any challenge. 😊",
+
+            // Entertainment
+            "Tell me a joke": "Sure! Why doesn't the computer go to the beach? Because it’s afraid of viruses! 😂",
+            "Joke": "Why is the tree scared? Because it's in a shady place! 😄",
+            "Make me laugh": "Why don't people trust stairs? Because they’re always up to something! 😄",
+
+            // Personal questions
+            "How old are you": "I'm a robot, so I don't have a specific age. 😊",
+            "Where are you from": "I'm from the internet, and always here to serve you.",
+            "Do you have a family": "I don't have a family, but I consider you part of it. 😊",
+            "Are you married": "😊I am a robot, I cannot marry as I don’t have a physical body. If you need anything else, feel free to ask.",
+
+            // General responses
+            "Thank you": "You're welcome! If you need anything else, don't hesitate to ask.",
+            "Alright": "Great! If you need anything else, just ask.",
+            "Goodbye": "Goodbye! I hope you have a great day.",
+            "See you later": "See you soon! Take care.",
+
+            // Default responses when not understood
+            "default": "Sorry, I didn't understand that. Could you please clarify your question?",
         };
 
         // الحصول على رد الروبوت
